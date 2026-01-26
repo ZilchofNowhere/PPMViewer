@@ -14,9 +14,9 @@
 
 typedef int tmpColor_t;
 
-std::pair<int, int> closestMultTo(int target, int num) {
+int closestMultTo(int target, int num) {
     if (target % num == 0) {
-        return std::make_pair(target, target / num);
+        return target / num;
     }
 
     bool lastChanged = 1; // 0 is left, 1 is right
@@ -36,19 +36,9 @@ std::pair<int, int> closestMultTo(int target, int num) {
         right--;
     }
 
-    if (under == -1) {
-        answer = over;
-        return std::make_pair(answer, answer / num);
-    }
-
-    if (over == -1) {
-        answer = under;
-        return std::make_pair(answer, answer / num);
-    }
-
     answer = lastChanged ? over : under;
 
-    return std::make_pair(answer, answer / num);
+    return answer / num;
 }
 
 int idealPixelSize(int width, int height) {
@@ -58,7 +48,7 @@ int idealPixelSize(int width, int height) {
     }
     // ideal window size is 800
     constexpr int target = 800;
-    return closestMultTo(target, std::max(width, height)).second;
+    return closestMultTo(target, std::max(width, height));
 }
 
 // Color and pixel management
@@ -234,11 +224,13 @@ int main() {
     }
 
     if (filePath.empty()) {
+        SDL_Log("No file path was provided.\n");
         SDL_DestroyWindow(window);
         SDL_Quit();
+        return -1;
     }
-    std::ifstream image(filePath);
     
+    std::ifstream image(filePath);
     if (!image.is_open()) {
         SDL_Log("File couldn't be opened.\n");
         SDL_DestroyWindow(window);
@@ -302,11 +294,11 @@ int main() {
     SDL_LockSurface(surface); // for writing the pixels at once
 
     // Draw
-    SDL_Rect pixel;
+    SDL_Rect* pixel;
     for (int x = 0; x < imageHeight; x++) {
         for (int y = 0; y < imageWidth; y++) {
-            pixel = SDL_Rect(y * pixelWidth, x * pixelWidth, pixelWidth, pixelWidth); // X&Y reverse prob bcoz of the way SDL handles coordinates
-            SDL_FillSurfaceRect(surface, &pixel, pixels[x][y].getHexColor());
+            pixel = SDL_Rect(y * pixelWidth, x * pixelWidth, pixelWidth, pixelWidth); // X&Y in reverse prob bcoz of the way SDL handles coordinates
+            SDL_FillSurfaceRect(surface, pixel, pixels[x][y].getHexColor());
         }
     }
     SDL_UnlockSurface(surface);
