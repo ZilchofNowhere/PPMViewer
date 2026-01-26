@@ -23,11 +23,9 @@ run:
 
 buildnrun: build run
 
-# 4. Clean up build artifacts
 clean:
 	rm -rf $(BUILD_DIR)
 
-# 5. Generate compile_commands.json for Doom/LSP
 lsp:
 	xcodebuild -project $(PROJECT) \
 		-scheme $(SCHEME) \
