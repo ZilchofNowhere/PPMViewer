@@ -9,7 +9,6 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
-#include <utility>
 #include <vector>
 
 typedef int tmpColor_t;
@@ -294,11 +293,11 @@ int main() {
     SDL_LockSurface(surface); // for writing the pixels at once
 
     // Draw
-    SDL_Rect* pixel;
+    SDL_Rect pixel;
     for (int x = 0; x < imageHeight; x++) {
         for (int y = 0; y < imageWidth; y++) {
             pixel = SDL_Rect(y * pixelWidth, x * pixelWidth, pixelWidth, pixelWidth); // X&Y in reverse prob bcoz of the way SDL handles coordinates
-            SDL_FillSurfaceRect(surface, pixel, pixels[x][y].getHexColor());
+            SDL_FillSurfaceRect(surface, &pixel, pixels[x][y].getHexColor());
         }
     }
     SDL_UnlockSurface(surface);
