@@ -10,6 +10,8 @@
 #include <fstream>
 #include <limits>
 #include <vector>
+#include <unistd.h>
+#include <pwd.h>
 
 typedef int tmpColor_t;
 
@@ -172,9 +174,9 @@ static void readPixels(std::vector<std::vector<Pixel>>& pixels, std::ifstream& i
                     unsigned char color[3];
                     image.read((char*)color, 3);
 
-                    pixel.blue = color[0];
-                    pixel.red = color[1];
-                    pixel.green = color[2];
+                    pixel.blue = convertColor(color[0], maxColor);
+                    pixel.red = convertColor(color[1], maxColor);
+                    pixel.green = convertColor(color[2], maxColor);
 
                     pixels[row].push_back(pixel);
                     pixel.clear();
@@ -227,7 +229,12 @@ int main() {
     SDL_Surface* surface = SDL_GetWindowSurface(window);
     
     // Opening the file
-    SDL_ShowOpenFileDialog(openFileCallback, nullptr, window, fileDialogFilter, nFilter, "/Users/aek/Pictures/", false); // The final slash at the end of the path is VERY important
+    char *homedir;
+    if ((homedir = getenv("HOME")) == NULL) {
+        homedir = getpwuid(getuid())->pw_dir;
+    }
+
+    SDL_ShowOpenFileDialog(openFileCallback, nullptr, window, fileDialogFilter, nFilter, std::strcat(homedir, "/Pictures/"), false); // The final slash at the end of the path is VERY important
     while (!isFileSelectionDone) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -269,10 +276,6 @@ int main() {
         return -1;
     } else if (header == "P6") {
         isBinary = true;
-        // SDL_Log("Did not implement binary PPM files. File type: %s", header.c_str());
-        // SDL_DestroyWindow(window);
-        // SDL_Quit();
-        // return -1;
     }
     std::cout << "Header is " << header << std::endl;
     std::cout << "File is " << (isMonochrome ? "monochrome" : "colorful") << std::endl;
