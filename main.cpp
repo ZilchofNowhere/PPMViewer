@@ -159,29 +159,46 @@ static void SDLCALL openFileCallback(void* userdata, const char* const* filelist
     isFileSelectionDone = true;
 }
 
-static void readPixels(std::vector<std::vector<Pixel>>& pixels, std::ifstream& image, const int width, const int height, const int maxColor, const bool monochrome) {
+static void readPixels(std::vector<std::vector<Pixel>>& pixels, std::ifstream& image, const int width, const int height, const int maxColor, const bool monochrome, const bool binary) {
     Pixel pixel;
     tmpColor_t r, g, b;
     std::string sRed, sGreen, sBlue;
 
     if (!monochrome) {
-        for (int row = 0; row < height; row++) {
-            pixels[row].reserve(width); // allocates space but doesn't initialize
-            for (int col = 0; col < width; col++) {
-                sRed = getNextToken(image);
-                sGreen = getNextToken(image);
-                sBlue = getNextToken(image);
+        if (binary) {
+            for (int row = 0; row < height; row++) {
+                pixels[row].reserve(width);
+                for (int col = 0; col < width; col++) { // if maxColor < 256 then each color val will be 1 byte, else 2 bytes
+                    unsigned char color[3];
+                    image.read((char*)color, 3);
 
-                r = std::stoi(sRed);
-                g = std::stoi(sGreen);
-                b = std::stoi(sBlue);
+                    pixel.blue = color[0];
+                    pixel.red = color[1];
+                    pixel.green = color[2];
 
-                pixel.red = convertColor(r, maxColor);
-                pixel.green = convertColor(g, maxColor);
-                pixel.blue = convertColor(b, maxColor);
+                    pixels[row].push_back(pixel);
+                    pixel.clear();
+                }
+            }
+        } else {
+            for (int row = 0; row < height; row++) {
+                pixels[row].reserve(width);
+                for (int col = 0; col < width; col++) {
+                    sRed = getNextToken(image);
+                    sGreen = getNextToken(image);
+                    sBlue = getNextToken(image);
 
-                pixels[row].push_back(pixel);
-                pixel.clear();
+                    r = std::stoi(sRed);
+                    g = std::stoi(sGreen);
+                    b = std::stoi(sBlue);
+
+                    pixel.red = convertColor(r, maxColor);
+                    pixel.green = convertColor(g, maxColor);
+                    pixel.blue = convertColor(b, maxColor);
+
+                    pixels[row].push_back(pixel);
+                    pixel.clear();
+                }
             }
         }
     } else {
@@ -244,16 +261,18 @@ int main() {
     std::string header = getNextToken(image);
 
     bool isMonochrome = (header == "P1");
+    bool isBinary = false;
     if (!isMonochrome && !(header == "P3" || header == "P6")) {
         SDL_Log("Couldn't recognize file type: %s\n", header.c_str());
         SDL_DestroyWindow(window);
         SDL_Quit();
         return -1;
     } else if (header == "P6") {
-        SDL_Log("Did not implement binary PPM files. File type: %s", header.c_str());
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return -1;
+        isBinary = true;
+        // SDL_Log("Did not implement binary PPM files. File type: %s", header.c_str());
+        // SDL_DestroyWindow(window);
+        // SDL_Quit();
+        // return -1;
     }
     std::cout << "Header is " << header << std::endl;
     std::cout << "File is " << (isMonochrome ? "monochrome" : "colorful") << std::endl;
@@ -284,11 +303,12 @@ int main() {
     }
     pixels.resize(imageHeight); // updates the vector to have the given size with its members initialized
 
-    readPixels(pixels, image, imageWidth, imageHeight, maxColor, isMonochrome);
+    readPixels(pixels, image, imageWidth, imageHeight, maxColor, isMonochrome, isBinary);
 
     // Managing the window to draw
     int pixelWidth = idealPixelSize(imageWidth, imageHeight); // they are supposed to be squares anyway
     SDL_SetWindowSize(window, imageWidth * pixelWidth, imageHeight * pixelWidth);
+    SDL_SetWindowTitle(window, filePath.c_str());
     surface = SDL_GetWindowSurface(window);
     SDL_LockSurface(surface); // for writing the pixels at once
 
