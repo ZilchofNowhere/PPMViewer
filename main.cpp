@@ -307,6 +307,7 @@ int main() {
     pixels.resize(imageHeight); // updates the vector to have the given size with its members initialized
 
     readPixels(pixels, image, imageWidth, imageHeight, maxColor, isMonochrome, isBinary);
+    image.close();
 
     // Managing the window to draw
     int pixelWidth = idealPixelSize(imageWidth, imageHeight); // they are supposed to be squares anyway
